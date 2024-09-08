@@ -1,0 +1,21 @@
+[package]
+name = "rasterization"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75.0"
+authors = ["Karl Wulfert <pic16f877.ccs@emailn.de>"]
+readme = "README.md"
+repository = "https://github.com/pic16f877ccs/rasterization"
+homepage = "https://github.com/pic16f877ccs/rasterization"
+license = "MIT"
+keywords = ["iterator", "adapter", "bresenham", "circle"]
+categories = ["algorithms", "rust-patterns", "data-structures"]
+description = "Iterator and iterator adapters for rasterizing a circle and its parts."
+
+[dependencies]
+colorous = "1.0.14"
+num = "0.4.3"
+num_convert = "0.7.2"
+
+[dev-dependencies]
+image = "0.25.2"
