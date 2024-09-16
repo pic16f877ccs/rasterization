@@ -18,7 +18,7 @@ Visual examples of different shapes:
 Here's how to use the crate:
 
 ```rust
-use rasterization::{Rasterization, SemicircleFilled};
+use rasterization::{Rasterization, SemicircleFilled, DirectionGradient::Bottom};
 
 let radius = 128_usize;
 let iter = SemicircleFilled::<i32>::new(radius)
@@ -40,7 +40,7 @@ let iter = SemicircleFilled::<i32>::new(radius)
 let iter = SemicircleFilled::<i32>::new(radius)
     .circle()
     .offset(radius as i32, radius as i32)
-    .gradient(colorous::BROWN_GREEN, radius);
+    .gradient(radius as i32, radius * 2, Bottom(colorous::BROWN_GREEN));
 ```
 
 <div class = "rustdoc-hidden">
@@ -50,7 +50,7 @@ Add the following to your Cargo.toml:
 
 ```toml
 [dependencies]
-rasterization = "0.1.0"
+rasterization = "0.2.0"
 ```
 ## License
 This project is licensed under the MIT License.

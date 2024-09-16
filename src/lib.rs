@@ -20,6 +20,27 @@ use core::ops::{Add, AddAssign, Mul, Neg, Range, Sub};
 use num::{One, Unsigned, Zero};
 use num_convert::FromAs;
 
+/// Enum for selecting the gradient direction and setting the color gradient type.
+#[derive(Debug, Clone, Copy)]
+pub enum DirectionGradient {
+    /// The gradient direction is from bottom to top.
+    Top(Gradient),
+    /// The gradient direction is from top to bottom.
+    Bottom(Gradient),
+    /// The gradient direction is from left to right.
+    Right(Gradient),
+    /// The gradient direction is from right to left.
+    Left(Gradient),
+    /// The gradient direction is from bottom right to top left.
+    TopLeft(Gradient),
+    /// The gradient direction is from bottom left to top right.
+    TopRight(Gradient),
+    /// The gradient direction is from top right to bottom left.
+    BottomLeft(Gradient),
+    /// The gradient direction is from top left to bottom rightt.
+    BottomRight(Gradient),
+}
+
 /// An iterator of successive coordinates of a filled semicircle, using Bresenham's algorithm.
 ///
 /// The semicircles are exactly equal in diameter to the circle.
@@ -492,35 +513,64 @@ pub trait Rasterization: Iterator {
         })
     }
 
-    /// # Header
-    /// The iterator adapter fills a circle or part of it with the color of the vertical gradient
-    /// from crate [colorous].
+    /// The iterator adapter fills a circle or part of it with a gradient color from crate [colorous].
+    /// Possible options are: vertical, horizontal or diagonal.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```rust
-    /// use rasterization::{Rasterization, SemicircleFilled};
+    /// use rasterization::{Rasterization, SemicircleFilled,
+    /// DirectionGradient::BottomRight};
     /// use colorous::Gradient;
     ///
-    /// let radius = 10_usize;
-    /// let iter = SemicircleFilled::<i32>::new(radius).circle()
-    ///     .gradient(colorous::BROWN_GREEN, radius);
+    /// let radius = 256_usize;
+    /// let offset_x = radius as i32;
+    /// let offset_y = radius as i32;
+    /// let offset = (radius as f32 * 1.414).ceil() as i32;
+    /// let size = (offset * 2) as usize;
+    /// let iter = SemicircleFilled::<i32>::new(radius)
+    ///     .circle()
+    ///     .take(3)
+    ///     .gradient(offset, size, BottomRight(colorous::BROWN_GREEN));
     /// let vec = iter.collect::<Vec<_>>();
-    /// assert_eq!(&vec[0..3], &vec![(-10, -1, [0, 59, 47]), (-10, 0, [84, 48, 5]), (-9, -1, [0, 59, 47])][..]);
+    /// assert_eq!(vec, vec![(-256, -1, [162, 103, 27]), (-256, 0, [163, 104, 27]), (-255, -1, [163, 104, 27])]);
     /// ```
     /// [colorous]: https://crates.io/crates/colorous
     #[inline]
-    fn gradient(
+    fn gradient<T>(
         self,
-        grad: Gradient,
-        radius: usize,
-    ) -> impl Iterator<Item = (i32, i32, [u8; 3])> + Clone + Debug
+        offset: T,
+        size: usize,
+        dir_grd: DirectionGradient,
+    ) -> impl Iterator<Item = (T, T, [u8; 3])> + Clone + Debug
     where
-        Self: Sized + Iterator<Item = (i32, i32)> + Clone + Debug,
+        Self: Sized + Iterator<Item = (T, T)> + Clone + Debug,
+        T: Add<Output = T> + Sub<Output = T> + Copy,
+        usize: FromAs<T>,
     {
-        self.map(move |(x, y)| (x, y, grad.eval_rational(y as usize, radius * 2).as_array()))
+        self.map(move |(x, y)| {
+            let grad_arg = match dir_grd {
+                DirectionGradient::Left(grad) => (offset - x, grad),
+                DirectionGradient::TopLeft(grad) => (offset - (x + y), grad),
+                DirectionGradient::Top(grad) => (offset - y, grad),
+                DirectionGradient::TopRight(grad) => (x - y + offset, grad),
+                DirectionGradient::Right(grad) => (x + offset, grad),
+                DirectionGradient::BottomRight(grad) => (x + y + offset, grad),
+                DirectionGradient::Bottom(grad) => (y + offset, grad),
+                DirectionGradient::BottomLeft(grad) => (offset - (x - y), grad),
+            };
+
+            (
+                x,
+                y,
+                grad_arg
+                    .1
+                    .eval_rational(usize::from_as(grad_arg.0), size)
+                    .as_array(),
+            )
+        })
     }
 }
 
